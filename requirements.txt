@@ -1,2 +1,2 @@
-aiohttp~=3.7.4.post0
+aiohttp~=3.8.1
 hvac~=0.11.2
