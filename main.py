@@ -6,7 +6,7 @@ from time import time
 from traceback import print_exc
 
 from aiohttp import ClientSession
-from credentials import spotify_client_secret, spotify_client_id, vk_fake_token
+from credentials import secrets
 
 
 class Status:
@@ -28,7 +28,7 @@ class Status:
     async def make_vk_request(method, **kwargs):
         async with ClientSession() as client:
             payload = {
-                'access_token': vk_fake_token,
+                'access_token': secrets['vk_fake_token'],
                 'v': '5.124'
             }
             payload.update(kwargs)
@@ -76,10 +76,10 @@ class Spotify:
 
     @staticmethod
     def load_token():
-        return load(open('spotify_auth.json', 'r'))
+        return load(open('resources/spotify_auth.json', 'r'))
 
     def dump_token(self):
-        dump(self.token, open('spotify_auth.json', 'w+'))
+        dump(self.token, open('resources/spotify_auth.json', 'w+'))
 
     async def get_token(self):
         if self.token and not self.check_token():
@@ -107,7 +107,7 @@ class Player:
     def __init__(self, idle_refresh=5, playing_refresh=1):
         self.idle_refresh = idle_refresh
         self.playing_refresh = playing_refresh
-        self.spotify = Spotify(spotify_client_id, spotify_client_secret)
+        self.spotify = Spotify(secrets['spotify_client_id'], secrets['spotify_client_secret'])
         self.status = None
 
     async def get_state(self):
