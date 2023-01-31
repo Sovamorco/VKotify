@@ -6,11 +6,12 @@ from time import time
 from traceback import print_exc
 
 from aiohttp import ClientSession
-from credentials import secrets
+from common import AsyncVaultClient, async_load_config
 
 
 class Status:
-    def __init__(self, title, artists, timestamp, state, idle_to_clear=120):
+    def __init__(self, token, title, artists, timestamp, state, idle_to_clear=120):
+        self.token = token
         self.artist = artists[0]
         self.title = title
         self.timestamp = timestamp / 1000
@@ -24,11 +25,10 @@ class Status:
         emoji = '▶' if self.playing else '⏸'
         return f'Где-то на просторах Spotify: {emoji}{self.artist} - {self.title}'
 
-    @staticmethod
-    async def make_vk_request(method, **kwargs):
+    async def make_vk_request(self, method, **kwargs):
         async with ClientSession() as client:
             payload = {
-                'access_token': secrets['vk_fake_token'],
+                'access_token': self.token,
                 'v': '5.124'
             }
             payload.update(kwargs)
@@ -105,9 +105,10 @@ class Spotify:
 
 class Player:
     def __init__(self, idle_refresh=5, playing_refresh=1):
+        self.config: dict = None
         self.idle_refresh = idle_refresh
         self.playing_refresh = playing_refresh
-        self.spotify = Spotify(secrets['spotify_client_id'], secrets['spotify_client_secret'])
+        self.spotify: Spotify = None
         self.status = None
 
     async def get_state(self):
@@ -118,10 +119,13 @@ class Player:
         timestamp = state['timestamp']
         artists = [artist['name'] for artist in state['item']['artists']]
         title = state['item']['name']
-        status = Status(title, artists, timestamp, playing)
+        status = Status(self.config['vk_token'], title, artists, timestamp, playing)
         return playing, status
 
     async def main_loop(self):
+        vault_client = AsyncVaultClient.from_env()
+        self.config = await async_load_config(vault_client=vault_client)
+        self.spotify = Spotify(**self.config['spotify'])
         while True:
             try:
                 playing, status = await self.get_state()
