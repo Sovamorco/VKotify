@@ -23,7 +23,7 @@ class Status:
         if not self.playing and self.now - self.timestamp > self.idle_time:
             return ''
         emoji = '▶' if self.playing else '⏸'
-        return f'Где-то на просторах Spotify: {emoji}{self.artist} - {self.title}'
+        return f'{emoji}{self.artist} - {self.title}'
 
     async def make_vk_request(self, method, **kwargs):
         async with ClientSession() as client:
